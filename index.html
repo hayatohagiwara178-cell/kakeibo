@@ -480,6 +480,7 @@
       <div class="toggle-row">
         <button class="toggle-btn active" id="mc-variable-btn" onclick="setMCType('variable')" style="background:var(--variable);color:white">📊 変動費</button>
         <button class="toggle-btn" id="mc-fixed-btn" onclick="setMCType('fixed')">🔒 固定費</button>
+        <button class="toggle-btn" id="mc-income-btn" onclick="setMCType('income')">💰 収入</button>
       </div>
     </div>
     <div class="form-group">
@@ -945,16 +946,10 @@ function setMCType(t) {
 function updateMCTypeBtns() {
   const vBtn = document.getElementById('mc-variable-btn');
   const fBtn = document.getElementById('mc-fixed-btn');
-  if (mcType==='variable') {
-    vBtn.style.cssText='background:var(--variable);color:white';
-    fBtn.style.cssText='background:white;color:var(--text)';
-  } else if (mcType==='fixed') {
-    fBtn.style.cssText='background:var(--fixed);color:white';
-    vBtn.style.cssText='background:white;color:var(--text)';
-  } else {
-    vBtn.style.cssText='background:var(--income);color:white';
-    fBtn.style.cssText='background:white;color:var(--text)';
-  }
+  const iBtn = document.getElementById('mc-income-btn');
+  vBtn.style.cssText = mcType==='variable' ? 'background:var(--variable);color:white' : 'background:white;color:var(--text)';
+  fBtn.style.cssText = mcType==='fixed'    ? 'background:var(--fixed);color:white'    : 'background:white;color:var(--text)';
+  iBtn.style.cssText = mcType==='income'   ? 'background:var(--income);color:white'   : 'background:white;color:var(--text)';
 }
 
 function saveCategory() {
