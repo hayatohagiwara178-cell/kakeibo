@@ -203,9 +203,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div id="h-budget-fixed-content"></div>
   </div>
 
-  <div class="card" id="h-budget-var-card">
-    <div class="card-title">📊 変動費 予算</div>
-    <div id="h-budget-var-content"></div>
+  <div class="card" id="h-budget-var1-card">
+    <div class="card-title">📊 変動費① 予算</div>
+    <div id="h-budget-var1-content"></div>
+  </div>
+  <div class="card" id="h-budget-var2-card">
+    <div class="card-title">📊 変動費② 予算</div>
+    <div id="h-budget-var2-content"></div>
   </div>
 
   <div class="card">
@@ -357,19 +361,20 @@ const DEFAULT_CATS = [
   {id:'c4', name:'サブスク（YouTube）',         icon:'▶️', color:'#ef4444', type:'fixed',    budget:1280,  order:3},
   {id:'c5', name:'サブスク（Amazon）',          icon:'📦', color:'#f59e0b', type:'fixed',    budget:600,   order:4},
   {id:'c6', name:'Claude費',                    icon:'🤖', color:'#8b5cf6', type:'fixed',    budget:3000,  order:5},
-  // 変動費
-  {id:'c7', name:'食費',     icon:'🍽️', color:'#ef4444', type:'variable', budget:30000, order:0},
-  {id:'c8', name:'軽食費',   icon:'☕',  color:'#f97316', type:'variable', budget:10000, order:1},
-  {id:'c9', name:'交通費',   icon:'🚃',  color:'#06b6d4', type:'variable', budget:10000, order:2},
-  {id:'c10',name:'交際費',   icon:'🥂',  color:'#ec4899', type:'variable', budget:15000, order:3},
-  {id:'c11',name:'娯楽費',   icon:'🎬',  color:'#8b5cf6', type:'variable', budget:10000, order:4},
-  {id:'c12',name:'被服費',   icon:'👔',  color:'#64748b', type:'variable', budget:10000, order:5},
-  {id:'c13',name:'日用品費', icon:'🛒',  color:'#10b981', type:'variable', budget:5000,  order:6},
-  {id:'c14',name:'通院費',   icon:'🏥',  color:'#10b981', type:'variable', budget:5000,  order:7},
-  {id:'c15',name:'美容費',   icon:'💄',  color:'#ec4899', type:'variable', budget:5000,  order:8},
-  {id:'c16',name:'施設費',   icon:'🏋️', color:'#3b82f6', type:'variable', budget:5000,  order:9},
-  {id:'c17',name:'ゲーム費', icon:'🎮',  color:'#6366f1', type:'variable', budget:5000,  order:10},
-  {id:'c18',name:'書籍費',   icon:'📚',  color:'#f59e0b', type:'variable', budget:3000,  order:11},
+  // 変動費①
+  {id:'c7', name:'食費',     icon:'🍽️', color:'#ef4444', type:'variable', budget:30000, order:0,  group:1},
+  {id:'c8', name:'軽食費',   icon:'☕',  color:'#f97316', type:'variable', budget:10000, order:1,  group:1},
+  {id:'c10',name:'交際費',   icon:'🥂',  color:'#ec4899', type:'variable', budget:15000, order:2,  group:1},
+  {id:'c11',name:'娯楽費',   icon:'🎬',  color:'#8b5cf6', type:'variable', budget:10000, order:3,  group:1},
+  {id:'c12',name:'被服費',   icon:'👔',  color:'#64748b', type:'variable', budget:10000, order:4,  group:1},
+  {id:'c13',name:'日用品費', icon:'🛒',  color:'#10b981', type:'variable', budget:5000,  order:5,  group:1},
+  {id:'c14',name:'通院費',   icon:'🏥',  color:'#10b981', type:'variable', budget:5000,  order:6,  group:1},
+  {id:'c15',name:'美容費',   icon:'💄',  color:'#ec4899', type:'variable', budget:5000,  order:7,  group:1},
+  {id:'c17',name:'ゲーム費', icon:'🎮',  color:'#6366f1', type:'variable', budget:5000,  order:8,  group:1},
+  {id:'c18',name:'書籍費',   icon:'📚',  color:'#f59e0b', type:'variable', budget:3000,  order:9,  group:1},
+  // 変動費②
+  {id:'c9', name:'交通費',   icon:'🚃',  color:'#06b6d4', type:'variable', budget:10000, order:0,  group:2},
+  {id:'c16',name:'施設費',   icon:'🏋️', color:'#3b82f6', type:'variable', budget:5000,  order:1,  group:2},
   // 収入
   {id:'c19',name:'給与',   icon:'💼', color:'#10b981', type:'income', budget:0, order:0},
   {id:'c20',name:'副収入', icon:'📈', color:'#3b82f6', type:'income', budget:0, order:1},
@@ -456,7 +461,8 @@ function renderHome(){
   document.getElementById('h-total-savings').textContent = fmt(totalSavings);
 
   renderBudgetSection('fixed', mTxs);
-  renderBudgetSection('variable', mTxs);
+  renderBudgetSection('variable1', mTxs);
+  renderBudgetSection('variable2', mTxs);
 
   const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
   const el=document.getElementById('h-recent');
@@ -464,9 +470,12 @@ function renderHome(){
 }
 
 function renderBudgetSection(type, mTxs){
-  const typeCats=sortedCats(type).filter(c=>c.budget>0);
-  const cardId = type==='fixed'?'h-budget-fixed-card':'h-budget-var-card';
-  const contentId = type==='fixed'?'h-budget-fixed-content':'h-budget-var-content';
+  const catFilter = type==='variable1' ? c=>c.type==='variable'&&(c.group??1)===1
+                  : type==='variable2' ? c=>c.type==='variable'&&c.group===2
+                  : c=>c.type===type;
+  const typeCats=cats.filter(catFilter).filter(c=>c.budget>0).sort((a,b)=>(a.order??0)-(b.order??0));
+  const cardId = type==='fixed'?'h-budget-fixed-card':type==='variable1'?'h-budget-var1-card':'h-budget-var2-card';
+  const contentId = type==='fixed'?'h-budget-fixed-content':type==='variable1'?'h-budget-var1-content':'h-budget-var2-content';
   const contentEl=document.getElementById(contentId);
   const cardEl=document.getElementById(cardId);
   cardEl.querySelectorAll('.alert').forEach(a=>a.remove());
