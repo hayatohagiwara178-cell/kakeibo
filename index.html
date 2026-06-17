@@ -340,6 +340,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="toggle-btn" id="mc-income-btn" onclick="setMCType('income')">💰 収入</button>
       </div>
     </div>
+    <div class="form-group" id="mc-group-row" style="display:none">
+      <label class="form-label">グループ</label>
+      <div class="toggle-row">
+        <button class="toggle-btn" id="mc-group1-btn" onclick="setMCGroup(1)">📊 変動費①</button>
+        <button class="toggle-btn" id="mc-group2-btn" onclick="setMCGroup(2)">📊 変動費②</button>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">月間予算（円）</label>
       <input class="form-input" id="mc-budget" type="number" placeholder="0" inputmode="numeric">
@@ -390,7 +397,7 @@ let monthlySavings = load('kakeibo_savings_amt', 0);
 let recordType='expense', selectedCat=null;
 let calYear, calMonth, calSelected=null;
 let graphTab='pie';
-let editingCatId=null, mcType='variable', mcIcon='🍽️', mcColor=COLORS[0];
+let editingCatId=null, mcType='variable', mcIcon='🍽️', mcColor=COLORS[0], mcGroup=1;
 
 // ── Helpers ──
 function fmt(n){ return '¥'+Math.abs(n).toLocaleString(); }
@@ -804,7 +811,7 @@ function moveCat(id,type,dir){
 
 // ── CATEGORY MODAL ──
 function openAddCat(){
-  editingCatId=null; mcType='variable'; mcIcon='🍽️'; mcColor=COLORS[0];
+  editingCatId=null; mcType='variable'; mcIcon='🍽️'; mcColor=COLORS[0]; mcGroup=1;
   document.getElementById('mc-name').value='';
   document.getElementById('mc-budget').value='';
   document.getElementById('modal-cat-title').textContent='カテゴリを追加';
@@ -815,12 +822,12 @@ function openAddCat(){
 function openEditCat(id){
   editingCatId=id;
   const c=getCat(id);
-  mcType=c.type; mcIcon=c.icon; mcColor=c.color;
+  mcType=c.type; mcIcon=c.icon; mcColor=c.color; mcGroup=c.group??1;
   document.getElementById('mc-name').value=c.name;
   document.getElementById('mc-budget').value=c.budget||'';
   document.getElementById('modal-cat-title').textContent='カテゴリを編集';
   document.getElementById('mc-delete-btn').style.display='';
-  renderModalCat(); openModal('modal-cat');
+  renderModalCat(); updateMCGroupRow(); openModal('modal-cat');
 }
 
 function renderModalCat(){
@@ -834,7 +841,16 @@ function renderModalCat(){
 }
 function selectMCIcon(ic){ mcIcon=ic; renderModalCat(); }
 function selectMCColor(c){ mcColor=c; renderModalCat(); }
-function setMCType(t){ mcType=t; updateMCTypeBtns(); }
+function setMCType(t){ mcType=t; updateMCTypeBtns(); updateMCGroupRow(); }
+function setMCGroup(g){ mcGroup=g; updateMCGroupBtns(); }
+function updateMCGroupRow(){
+  document.getElementById('mc-group-row').style.display=mcType==='variable'?'':'none';
+  updateMCGroupBtns();
+}
+function updateMCGroupBtns(){
+  document.getElementById('mc-group1-btn').style.cssText=mcGroup===1?'background:var(--variable);color:white':'background:white;color:var(--text)';
+  document.getElementById('mc-group2-btn').style.cssText=mcGroup===2?'background:var(--variable);color:white':'background:white;color:var(--text)';
+}
 function updateMCTypeBtns(){
   const btns={variable:document.getElementById('mc-variable-btn'),fixed:document.getElementById('mc-fixed-btn'),income:document.getElementById('mc-income-btn')};
   const colors={variable:'var(--variable)',fixed:'var(--fixed)',income:'var(--income)'};
@@ -850,9 +866,11 @@ function saveCategory(){
   if(editingCatId){
     const c=getCat(editingCatId);
     c.name=name; c.icon=mcIcon; c.color=mcColor; c.type=mcType; c.budget=budget;
+    if(mcType==='variable') c.group=mcGroup; else delete c.group;
   } else {
     const maxOrder=Math.max(...cats.filter(c=>c.type===mcType).map(c=>c.order??0),0);
-    cats.push({id:'c'+Date.now(),name,icon:mcIcon,color:mcColor,type:mcType,budget,order:maxOrder+1});
+    const group=mcType==='variable'?mcGroup:undefined;
+    cats.push({id:'c'+Date.now(),name,icon:mcIcon,color:mcColor,type:mcType,budget,order:maxOrder+1,group});
   }
   save('kakeibo_cats',cats);
   closeModal('modal-cat'); renderSettings();
