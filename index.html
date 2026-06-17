@@ -458,7 +458,7 @@ function renderHome(){
   renderBudgetSection('fixed', mTxs);
   renderBudgetSection('variable', mTxs);
 
-  const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
   const el=document.getElementById('h-recent');
   el.innerHTML=recent.length?recent.map(txItem).join(''):'<div class="empty">まだ記録がありません</div>';
 }
@@ -514,7 +514,7 @@ function txItem(t){
 function renderRecord(){
   document.getElementById('r-date').value=todayStr();
   renderCatGrid();
-  const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
   const el=document.getElementById('r-recent');
   el.innerHTML=recent.length?recent.map(t=>{
     const cat=getCat(t.catId);
@@ -630,11 +630,28 @@ function renderCalendar(){
 
 function selectCalDay(ds){ calSelected=calSelected===ds?null:ds; renderCalendar(); }
 function showCalDetail(ds){
-  const dayTxs=txs.filter(t=>t.date===ds);
+  const dayTxs=txs.filter(t=>t.date===ds).sort((a,b)=>b.id.localeCompare(a.id));
   const d=new Date(ds+'T00:00:00');
   document.getElementById('cal-detail-title').textContent=`${d.getMonth()+1}月${d.getDate()}日の記録`;
-  document.getElementById('cal-detail-content').innerHTML=dayTxs.length?dayTxs.map(txItem).join(''):'<div class="empty">記録なし</div>';
+  document.getElementById('cal-detail-content').innerHTML=dayTxs.length?dayTxs.map(t=>{
+    const cat=getCat(t.catId);
+    const sign=t.type==='income'?'+':'-';
+    return `<div class="tx-item">
+      <div class="tx-icon" style="background:${cat?cat.color+'22':'#f3f4f6'}">${cat?cat.icon:'❓'}</div>
+      <div class="tx-info"><div class="tx-name">${cat?cat.name:'不明'}</div><div class="tx-sub">${t.memo||''}</div></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="tx-amount ${t.type}">${sign}${fmt(t.amount)}</div>
+        <button onclick="deleteCalTx('${t.id}','${ds}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ef4444;">🗑</button>
+      </div></div>`;
+  }).join(''):'<div class="empty">記録なし</div>';
   document.getElementById('cal-detail').style.display='';
+}
+
+function deleteCalTx(id, ds){
+  if(!confirm('この記録を削除しますか？'))return;
+  txs=txs.filter(t=>t.id!==id);
+  save('kakeibo_txs',txs);
+  renderCalendar();
 }
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} calSelected=null; renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} calSelected=null; renderCalendar(); }
